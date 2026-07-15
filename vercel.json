@@ -1,10 +1,5 @@
 {
-  "name": "petite-fusee",
-  "version": 2,
-  "builds": [
-    { "src": "package.json", "use": "@vercel/static-build" }
-  ],
-  "buildCommand": "pnpm run build",
+  "buildCommand": "pnpm install --frozen-lockfile && pnpm run build",
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
