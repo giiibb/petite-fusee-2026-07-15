@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Petits Animaux</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body class="animals">
+  <main id="game">
+    <canvas id="world"></canvas>
+
+    <div class="ui">
+      <a href="/" class="pill back">← Accueil</a>
+      <div class="pill">
+        <span id="agent">Choisis un animal en bas ↑</span>
+      </div>
+    </div>
+
+    <div class="vehicle-bar">
+      <button class="vehicle-btn" data-type="cat" type="button">🐱 Chat</button>
+      <button class="vehicle-btn" data-type="dog" type="button">🐶 Chien</button>
+      <button class="vehicle-btn" data-type="rabbit" type="button">🐰 Lapin</button>
+      <button class="vehicle-btn" data-type="bird" type="button">🐦 Oiseau</button>
+    </div>
+  </main>
+
+  <script type="module" src="/src/animals.js"></script>
+</body>
+</html>

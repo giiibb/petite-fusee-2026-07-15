@@ -9,18 +9,16 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        'petite-fusee': resolve(__dirname, 'petite-fusee.html'),
-        'petites-machines': resolve(__dirname, 'petites-machines.html'),
+        home: resolve(__dirname, 'index.html'),
+        fusee: resolve(__dirname, 'petite-fusee.html'),
+        machines: resolve(__dirname, 'petites-machines.html'),
+        animals: resolve(__dirname, 'petits-animaux.html'),
       },
     },
   },
-  plugins: [
-    {
-      name: 'copy-vercel-json',
-      closeBundle() {
-        copyFileSync('vercel.json', 'dist/vercel.json');
-      },
-    },
-  ],
+  closeBundle() {
+    try {
+      copyFileSync('vercel.json', 'dist/vercel.json');
+    } catch {}
+  },
 });

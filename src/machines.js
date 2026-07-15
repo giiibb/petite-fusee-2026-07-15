@@ -11,6 +11,12 @@ const buttons = document.querySelectorAll('.vehicle-btn');
 let width, height, dpr;
 let mouse = { x: 0, y: 0, active: false };
 let frame = 0;
+let demoMode = true;
+let demoTimer = 0;
+let demoPhaseIndex = 0;
+let demoMessage = 'Regarde : la voiture roule toute seule';
+let demoMessageTimer = 0;
+let demoVehicleOrder = ['car', 'truck', 'tractor', 'excavator'];
 
 const VEHICLES = {
   car: {
@@ -161,8 +167,10 @@ function initWorld() {
 function update() {
   frame++;
 
-  // Mouvement auto de démonstration si l'enfant n'interagit pas encore
-  if (!mouse.active) {
+  if (demoMode) {
+    runDemo();
+  } else if (!mouse.active) {
+    // Mouvement auto de démonstration si l'enfant n'interagit pas encore
     const zone = zones.find(z => VEHICLES[currentType].action === z.type);
     if (zone) {
       mouse.x = zone.x + Math.sin(frame * 0.01) * zone.w * 0.3;
@@ -200,17 +208,19 @@ function update() {
     if (vehicle.state !== 'working') {
       vehicle.state = 'working';
       vehicle.workTimer = 0;
-      say(spec.label + ' !');
+      if (!demoMode) say(spec.label + ' !');
     }
     vehicle.workTimer++;
     doAction(spec.action);
   } else {
     vehicle.state = 'idle';
     vehicle.workTimer = 0;
-    if (inside) {
-      say(`Cette zone est pour un autre véhicule…`);
-    } else if (agentTimer <= 0) {
-      say('Conduis la ' + spec.name + ' vers sa zone colorée');
+    if (!demoMode) {
+      if (inside) {
+        say('Cette zone est pour un autre véhicule…');
+      } else if (agentTimer <= 0) {
+        say('Conduis la ' + spec.name + ' vers sa zone colorée');
+      }
     }
   }
 
@@ -225,6 +235,61 @@ function update() {
     b.x += b.speed;
     if (b.x > width + 20) b.x = -20;
   }
+}
+
+function runDemo() {
+  demoTimer++;
+  const t = demoTimer / 60;
+  const phaseDuration = 10; // secondes par véhicule
+
+  demoPhaseIndex = Math.min(Math.floor(t / phaseDuration), demoVehicleOrder.length - 1);
+  const type = demoVehicleOrder[demoPhaseIndex];
+
+  if (currentType !== type) {
+    buttons.forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector(`[data-type="${type}"]`);
+    if (btn) btn.classList.add('active');
+    currentType = type;
+    vehicle.state = 'idle';
+    vehicle.workTimer = 0;
+  }
+
+  const spec = VEHICLES[type];
+  const zone = zones.find(z => z.type === spec.action);
+
+  if (zone) {
+    mouse.x = zone.x + Math.sin(frame * 0.01) * zone.w * 0.25;
+    mouse.y = zone.y + Math.cos(frame * 0.012) * zone.h * 0.25;
+  }
+
+  // Messages explicatifs
+  const messages = [
+    'Regarde : la voiture roule sur la route',
+    'Le camion charge du foin à la ferme',
+    'Le tracteur laboure le champ',
+    'La pelleteuse creuse et trouve des cailloux',
+  ];
+  demoMessage = messages[demoPhaseIndex];
+
+  if (demoMessageTimer <= 0) {
+    say(demoMessage + ' — à toi ensuite !');
+    demoMessageTimer = 150;
+  } else {
+    demoMessageTimer--;
+  }
+
+  // Après 40 secondes, on demande à l'enfant de prendre le relais
+  if (t >= 42) {
+    demoMode = false;
+    demoTimer = 0;
+    say('À toi ! Choisis un véhicule et conduis-le');
+  }
+}
+
+function endDemo() {
+  demoMode = false;
+  demoTimer = 0;
+  say('À toi ! Choisis un véhicule et conduis-le');
 }
 
 function doAction(action) {
@@ -528,21 +593,32 @@ function loop() {
 
 // Événements
 window.addEventListener('pointermove', (e) => {
+  if (demoMode) endDemo();
   mouse.x = e.clientX;
   mouse.y = e.clientY;
   mouse.active = true;
 });
 
+window.addEventListener('pointerdown', () => {
+  if (demoMode) endDemo();
+});
+
 window.addEventListener('touchmove', (e) => {
   e.preventDefault();
+  if (demoMode) endDemo();
   const t = e.touches[0];
   mouse.x = t.clientX;
   mouse.y = t.clientY;
   mouse.active = true;
 }, { passive: false });
 
+window.addEventListener('touchstart', (e) => {
+  if (demoMode) endDemo();
+}, { passive: false });
+
 buttons.forEach((btn) => {
   btn.addEventListener('click', () => {
+    if (demoMode) endDemo();
     buttons.forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentType = btn.dataset.type;

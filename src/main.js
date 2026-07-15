@@ -12,6 +12,13 @@ const musicLabel = document.getElementById('musicLabel');
 
 let width, height, dpr;
 let mouse = { x: 0, y: 0, active: false };
+let demoMode = true;
+let demoTimer = 0;
+let demoPhase = 0;
+let demoMessage = 'Regarde : la fusée vole toute seule';
+let demoMessageTimer = 0;
+let demoBoostTimer = 0;
+let demoEventSeek = null;
 let rocket = { x: 0, y: 0, angle: 0, vx: 0, vy: 0 };
 let stars = [];
 let clouds = [];
@@ -595,6 +602,10 @@ function update() {
   frame++;
   gameTime = frame / 60;
 
+  if (demoMode) {
+    runDemo();
+  }
+
   // Fin apaisante après 2 minutes
   if (gameTime >= 120) {
     if (finishPhase === 0) {
@@ -726,6 +737,70 @@ function update() {
   spawnParticles();
 }
 
+function runDemo() {
+  demoTimer++;
+  const t = demoTimer / 60;
+
+  // Phases de la démo (en secondes)
+  if (t < 5) {
+    demoMessage = 'Regarde : la fusée vole toute seule';
+  } else if (t < 12) {
+    demoMessage = 'La fusée suit les cadeaux du ciel';
+  } else if (t < 22) {
+    demoMessage = 'Appuie sur espace pour un coup de boost';
+    if (demoBoostTimer <= 0) demoBoostTimer = 60; // boost périodique en démo
+  } else if (t < 30) {
+    demoMessage = 'À toi ! Bouge la souris ou touche l’écran';
+  } else if (t >= 30) {
+    // Si l'utilisateur n'a toujours pas interagi, on boucle la démo
+    demoTimer = 5 * 60;
+  }
+
+  if (demoMessageTimer <= 0) {
+    showInstruction(demoMessage);
+    demoMessageTimer = 120;
+  } else {
+    demoMessageTimer--;
+  }
+
+  // Cible automatique : centre de l'écran avec une sinusoïde, puis chercher un événement
+  if (events.length > 0 && !demoEventSeek) {
+    demoEventSeek = events.reduce((a, b) => {
+      const da = Math.hypot(a.x - rocket.x, a.y - rocket.y);
+      const db = Math.hypot(b.x - rocket.x, b.y - rocket.y);
+      return da < db ? a : b;
+    });
+  }
+
+  if (events.length === 0) demoEventSeek = null;
+
+  if (demoEventSeek && t > 5) {
+    mouse.x = demoEventSeek.x + Math.sin(frame * 0.04) * 30;
+    mouse.y = demoEventSeek.y + Math.cos(frame * 0.04) * 30;
+  } else {
+    mouse.x = width / 2 + Math.sin(frame * 0.006) * width * 0.3;
+    mouse.y = height * 0.5 + Math.cos(frame * 0.01) * height * 0.2;
+  }
+
+  // Boost automatique en démo
+  if (demoBoostTimer > 0) {
+    demoBoostTimer--;
+    spaceHeld = true;
+  } else {
+    spaceHeld = false;
+  }
+}
+
+function endDemo() {
+  demoMode = false;
+  demoTimer = 0;
+  demoEventSeek = null;
+  spaceHeld = false;
+  showInstruction('À toi de jouer !');
+  demoMessageTimer = 0;
+  eventMessageTimer = 120;
+}
+
 function loop() {
   update();
   drawSky();
@@ -810,13 +885,19 @@ function toggleMusic() {
 }
 
 window.addEventListener('pointermove', (e) => {
+  if (demoMode) endDemo();
   mouse.x = e.clientX;
   mouse.y = e.clientY;
   mouse.active = true;
 });
 
+window.addEventListener('pointerdown', () => {
+  if (demoMode) endDemo();
+});
+
 window.addEventListener('keydown', (e) => {
   if (e.code === 'Space') {
+    if (demoMode) endDemo();
     spaceHeld = true;
     if (!audioCtx) startMusic();
   }
@@ -830,6 +911,7 @@ window.addEventListener('keyup', (e) => {
 
 window.addEventListener('touchmove', (e) => {
   e.preventDefault();
+  if (demoMode) endDemo();
   const t = e.touches[0];
   mouse.x = t.clientX;
   mouse.y = t.clientY;
@@ -837,6 +919,7 @@ window.addEventListener('touchmove', (e) => {
 }, { passive: false });
 
 window.addEventListener('touchstart', (e) => {
+  if (demoMode) endDemo();
   const t = e.touches[0];
   if (t.clientY > height * 0.75) {
     spaceHeld = true;
@@ -849,6 +932,7 @@ window.addEventListener('touchend', () => {
 });
 
 musicBtn.addEventListener('click', () => {
+  if (demoMode) endDemo();
   if (!audioCtx) startMusic();
   toggleMusic();
 });
