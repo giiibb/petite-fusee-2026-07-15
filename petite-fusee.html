@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Petite Fusée</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+  <main id="game">
+    <canvas id="sky"></canvas>
+
+    <div class="ui">
+      <div class="pill">
+        <span id="instruction">Bouge la fusée avec la souris</span>
+      </div>
+      <button id="musicBtn" class="music-toggle" type="button" aria-label="Activer ou couper la musique">
+        <span class="note">♪</span>
+        <span id="musicLabel">Musique</span>
+      </button>
+    </div>
+  </main>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

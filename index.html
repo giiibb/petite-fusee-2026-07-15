@@ -3,27 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Petite Fusée</title>
+  <title>Jeux doux pour petits</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/src/styles.css" />
 </head>
-<body>
-  <main id="game">
-    <canvas id="sky"></canvas>
+<body class="menu">
+  <main class="menu-container">
+    <h1>Jeux doux</h1>
+    <p class="subtitle">Choisis une aventure</p>
 
-    <div class="ui">
-      <div class="pill">
-        <span id="instruction">Bouge la fusée avec la souris</span>
-      </div>
-      <button id="musicBtn" class="music-toggle" type="button" aria-label="Activer ou couper la musique">
-        <span class="note">♪</span>
-        <span id="musicLabel">Musique</span>
-      </button>
+    <div class="games">
+      <a href="/petite-fusee.html" class="game-card" aria-label="Petite Fusée">
+        <span class="icon">🚀</span>
+        <span class="title">Petite Fusée</span>
+        <span class="desc">Vole dans le ciel et attrape les cadeaux des étoiles.</span>
+      </a>
+      <a href="/petites-machines.html" class="game-card" aria-label="Petites Machines">
+        <span class="icon">🚜</span>
+        <span class="title">Petites Machines</span>
+        <span class="desc">Conduis une voiture, un camion, un tracteur ou une pelleteuse. Chaque action fait quelque chose !</span>
+      </a>
     </div>
   </main>
-
-  <script type="module" src="/src/main.js"></script>
 </body>
 </html>
