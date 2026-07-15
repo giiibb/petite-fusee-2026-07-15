@@ -1,0 +1,8 @@
+# Petite Fusée
+
+/dist
+/node_modules
+*.log
+.env
+.env.*
+.vercel

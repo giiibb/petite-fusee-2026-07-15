@@ -1,0 +1,7 @@
+# Vercel ignore — for static Git push deploy
+# Source files are built into dist/; Vercel reads repo root with buildCommand
+node_modules
+*.log
+.env
+.env.*
+.vercel
