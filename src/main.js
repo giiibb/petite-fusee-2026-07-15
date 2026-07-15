@@ -62,32 +62,32 @@ function resize() {
 
 function initStars() {
   stars = [];
-  const count = Math.floor((width * height) / 6000);
+  const count = Math.floor((width * height) / 9000);
   for (let i = 0; i < count; i++) {
     stars.push({
       x: Math.random() * width,
       y: Math.random() * height,
-      r: Math.random() * 1.5 + 0.5,
+      r: Math.random() * 2.5 + 1.2,
       twinkle: Math.random() * Math.PI * 2,
-      speed: Math.random() * 0.05 + 0.01,
+      speed: Math.random() * 0.08 + 0.02,
     });
   }
 }
 
 function initClouds() {
   clouds = [];
-  const count = Math.floor(width / 180) + 2;
+  const count = Math.floor(width / 260) + 2;
   for (let i = 0; i < count; i++) {
     clouds.push({
       x: Math.random() * width,
       y: Math.random() * height * 0.7 + height * 0.15,
-      r: Math.random() * 40 + 30,
-      speed: Math.random() * 0.2 + 0.05,
-      opacity: Math.random() * 0.15 + 0.05,
-      circles: Array.from({ length: 4 }, () => ({
-        dx: (Math.random() - 0.5) * 60,
-        dy: (Math.random() - 0.5) * 20,
-        r: Math.random() * 25 + 15,
+      r: Math.random() * 65 + 50,
+      speed: Math.random() * 0.25 + 0.08,
+      opacity: Math.random() * 0.18 + 0.08,
+      circles: Array.from({ length: 5 }, () => ({
+        dx: (Math.random() - 0.5) * 90,
+        dy: (Math.random() - 0.5) * 35,
+        r: Math.random() * 40 + 25,
       })),
     });
   }
@@ -100,9 +100,9 @@ function initPlanets() {
     planets.push({
       x: Math.random() * width,
       y: Math.random() * height * 0.5,
-      r: Math.random() * 18 + 10,
+      r: Math.random() * 28 + 18,
       color: palette[i % palette.length],
-      speed: Math.random() * 0.04 + 0.01,
+      speed: Math.random() * 0.06 + 0.02,
       ring: Math.random() > 0.5,
     });
   }
@@ -110,10 +110,10 @@ function initPlanets() {
 
 function spawnEvent() {
   const kind = EVENT_KINDS[Math.floor(Math.random() * EVENT_KINDS.length)];
-  const x = Math.random() * (width - 80) + 40;
-  const y = -80;
-  const r = 22 + Math.random() * 18;
-  events.push({ kind, x, y, r, speed: 1 + Math.random() * 1.2, phase: Math.random() * Math.PI * 2 });
+  const x = Math.random() * (width - 120) + 60;
+  const y = -110;
+  const r = 38 + Math.random() * 24;
+  events.push({ kind, x, y, r, speed: 1.2 + Math.random() * 1.4, phase: Math.random() * Math.PI * 2 });
 }
 
 function setRocketMode(mode, label) {
@@ -142,7 +142,7 @@ function drawSky() {
     ctx.fillStyle = `rgba(255, 236, 214, ${alpha})`;
     ctx.fill();
   }
-
+  // Planètes lointaines
   for (const p of planets) {
     ctx.save();
     ctx.globalAlpha = 0.55;
@@ -153,8 +153,8 @@ function drawSky() {
     if (p.ring) {
       ctx.beginPath();
       ctx.ellipse(p.x, p.y, p.r * 2.2, p.r * 0.55, Math.PI / 6, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255,243,224,0.18)';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(255,243,224,0.22)';
+      ctx.lineWidth = 3;
       ctx.stroke();
     }
     ctx.restore();
@@ -260,20 +260,20 @@ function drawRocket() {
   ctx.translate(rocket.x, rocket.y);
   ctx.rotate(rocket.angle);
 
-  const baseScale = 0.7 + boost * 0.15;
+  const baseScale = 1.0 + boost * 0.2;
   const extraScale = rocketState.mode === 'bubble' ? 1 + Math.sin(frame * 0.08) * 0.08 : 1;
   ctx.scale(baseScale * extraScale, baseScale * extraScale);
 
   const c = rocketColors();
 
   // Flamme / traînée selon le mode
-  const flameLen = 38 + boost * 45 + Math.sin(frame * 0.5) * 4;
+  const flameLen = 55 + boost * 65 + Math.sin(frame * 0.5) * 6;
   if (rocketState.mode === 'star') {
     // Étoiles dorées derrière la fusée
     for (let i = 0; i < 5; i++) {
-      const y = 30 + i * 14 + (frame * 2) % 14;
+      const y = 45 + i * 20 + (frame * 2.5) % 20;
       ctx.beginPath();
-      ctx.arc((i % 2 === 0 ? -4 : 4), y, 2.5, 0, Math.PI * 2);
+      ctx.arc((i % 2 === 0 ? -6 : 6), y, 3.5, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(255, 209, 102, ${1 - i * 0.18})`;
       ctx.fill();
     }
@@ -281,34 +281,34 @@ function drawRocket() {
     const rainbowColors = ['#e76f51', '#f4a261', '#e9c46a', '#2a9d8f', '#a8dadc'];
     rainbowColors.forEach((color, i) => {
       ctx.beginPath();
-      ctx.moveTo(-8 + i * 3, 22);
-      ctx.lineTo(0, 22 + flameLen + i * 10);
-      ctx.lineTo(8 - i * 3, 22);
+      ctx.moveTo(-12 + i * 4, 32);
+      ctx.lineTo(0, 32 + flameLen + i * 14);
+      ctx.lineTo(12 - i * 4, 32);
       ctx.closePath();
       ctx.fillStyle = color;
       ctx.fill();
     });
   } else if (rocketState.mode === 'sleepy') {
     // Traînée douce violette
-    const grad = ctx.createLinearGradient(0, 20, 0, 20 + flameLen * 1.4);
+    const grad = ctx.createLinearGradient(0, 28, 0, 28 + flameLen * 1.4);
     grad.addColorStop(0, 'rgba(205, 180, 219, 0.8)');
     grad.addColorStop(1, 'rgba(205, 180, 219, 0)');
     ctx.beginPath();
-    ctx.moveTo(-10, 22);
-    ctx.lineTo(0, 22 + flameLen * 1.4);
-    ctx.lineTo(10, 22);
+    ctx.moveTo(-15, 32);
+    ctx.lineTo(0, 32 + flameLen * 1.4);
+    ctx.lineTo(15, 32);
     ctx.closePath();
     ctx.fillStyle = grad;
     ctx.fill();
   } else {
-    const grad = ctx.createLinearGradient(0, 20, 0, 20 + flameLen);
+    const grad = ctx.createLinearGradient(0, 28, 0, 28 + flameLen);
     grad.addColorStop(0, 'rgba(255, 209, 102, 0.95)');
     grad.addColorStop(0.6, 'rgba(231, 111, 81, 0.7)');
     grad.addColorStop(1, 'rgba(231, 111, 81, 0)');
     ctx.beginPath();
-    ctx.moveTo(-10, 22);
-    ctx.lineTo(0, 22 + flameLen);
-    ctx.lineTo(10, 22);
+    ctx.moveTo(-15, 32);
+    ctx.lineTo(0, 32 + flameLen);
+    ctx.lineTo(15, 32);
     ctx.closePath();
     ctx.fillStyle = grad;
     ctx.fill();
@@ -317,10 +317,10 @@ function drawRocket() {
   // Halo autour de la fusée
   if (rocketState.mode !== 'classic' || boost > 0.1) {
     const haloColor = rocketState.mode === 'bubble' ? '168, 218, 220' : rocketState.mode === 'rainbow' ? '255, 209, 102' : rocketState.mode === 'star' ? '255, 209, 102' : rocketState.mode === 'sleepy' ? '205, 180, 219' : '168, 218, 220';
-    const haloSize = 55 + (boost + rocketState.pulse) * 30;
+    const haloSize = 80 + (boost + rocketState.pulse) * 40;
     ctx.beginPath();
-    ctx.arc(0, 5, haloSize, 0, Math.PI * 2);
-    const halo = ctx.createRadialGradient(0, 5, 8, 0, 5, haloSize + 15);
+    ctx.arc(0, 7, haloSize, 0, Math.PI * 2);
+    const halo = ctx.createRadialGradient(0, 7, 12, 0, 7, haloSize + 20);
     halo.addColorStop(0, `rgba(${haloColor}, ${0.35 + (boost + rocketState.pulse) * 0.2})`);
     halo.addColorStop(1, `rgba(${haloColor}, 0)`);
     ctx.fillStyle = halo;
@@ -330,54 +330,54 @@ function drawRocket() {
   // Ailerons
   ctx.fillStyle = c.wing;
   ctx.beginPath();
-  ctx.moveTo(-22, 14);
-  ctx.lineTo(-34, 34);
-  ctx.lineTo(-12, 26);
+  ctx.moveTo(-32, 20);
+  ctx.lineTo(-50, 50);
+  ctx.lineTo(-18, 38);
   ctx.closePath();
   ctx.fill();
   ctx.beginPath();
-  ctx.moveTo(22, 14);
-  ctx.lineTo(34, 34);
-  ctx.lineTo(12, 26);
+  ctx.moveTo(32, 20);
+  ctx.lineTo(50, 50);
+  ctx.lineTo(18, 38);
   ctx.closePath();
   ctx.fill();
 
   // Corps
   ctx.beginPath();
-  ctx.ellipse(0, 0, 22, 42, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, 32, 60, 0, 0, Math.PI * 2);
   ctx.fillStyle = c.body;
   ctx.fill();
 
   // Dôme
   ctx.beginPath();
-  ctx.arc(0, -18, 18, Math.PI, 0);
-  ctx.lineTo(-12, -12);
+  ctx.arc(0, -26, 26, Math.PI, 0);
+  ctx.lineTo(-18, -18);
   ctx.closePath();
   ctx.fillStyle = c.dome;
   ctx.fill();
 
   // Hublot
   ctx.beginPath();
-  ctx.arc(0, -8, 10, 0, Math.PI * 2);
+  ctx.arc(0, -12, 14, 0, Math.PI * 2);
   ctx.fillStyle = c.window;
   ctx.fill();
   ctx.beginPath();
-  ctx.arc(-3, -11, 3, 0, Math.PI * 2);
+  ctx.arc(-4, -16, 4, 0, Math.PI * 2);
   ctx.fillStyle = 'rgba(255,255,255,0.35)';
   ctx.fill();
 
   // Petit détail mode
   if (rocketState.mode === 'bubble') {
     ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.arc(8, 8, 4, 0, Math.PI * 2);
+    ctx.arc(11, 11, 6, 0, Math.PI * 2);
     ctx.stroke();
   } else if (rocketState.mode === 'star') {
     ctx.fillStyle = '#fff3e0';
     for (let i = -1; i <= 1; i++) {
       ctx.beginPath();
-      ctx.arc(i * 14, 18, 2, 0, Math.PI * 2);
+      ctx.arc(i * 20, 26, 3, 0, Math.PI * 2);
       ctx.fill();
     }
   }
@@ -447,11 +447,12 @@ function updateEvents() {
       continue;
     }
 
-    // Collision douce avec la fusée
+    // Collision douce avec la fusée ( Rayon fusée + rayon événement )
     const dx = rocket.x - e.x;
     const dy = rocket.y - e.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < e.r + 30) {
+    const hitRadius = 55 + e.r;
+    if (dist < hitRadius) {
       // Déclenche un changement d'état
       if (e.kind === 'comet') setRocketMode('star', 'Fusée étoile !');
       else if (e.kind === 'cloud') setRocketMode('sleepy', 'Fusée tout doux…');
