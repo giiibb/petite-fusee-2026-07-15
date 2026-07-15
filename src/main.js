@@ -30,7 +30,7 @@ let musicGain = null;
 const EVENT_KINDS = ['comet', 'cloud', 'bubble', 'rainbow', 'stardust'];
 let events = [];
 let rocketState = {
-  mode: 'classic', // classic, bubble, rainbow, star, sleepy
+  mode: 'classic', // classic, bubble, rainbow, star, sleepy, super
   timer: 0,
   pulse: 0,
   colorShift: 0,
@@ -38,6 +38,11 @@ let rocketState = {
 let lastEventTime = 0;
 let eventMessage = '';
 let eventMessageTimer = 0;
+let gameTime = 0; // en secondes approximatives (frame / 60)
+let superSurprise = null; // la surprise à 1 min
+let gameFinished = false;
+let finishTimer = 0;
+let finishPhase = 0; // 0 en cours, 1 fin enclenchée, 2 finie
 
 function resize() {
   dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -130,8 +135,14 @@ function showInstruction(text) {
 
 function drawSky() {
   const grad = ctx.createLinearGradient(0, 0, 0, height);
-  grad.addColorStop(0, '#3d3430');
-  grad.addColorStop(1, '#5c4d46');
+  if (finishPhase >= 1) {
+    const t = Math.min(finishTimer / 300, 1);
+    grad.addColorStop(0, interpolateColor('#3d3430', '#1e1a18', t));
+    grad.addColorStop(1, interpolateColor('#5c4d46', '#2c2522', t));
+  } else {
+    grad.addColorStop(0, '#3d3430');
+    grad.addColorStop(1, '#5c4d46');
+  }
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, width, height);
 
@@ -171,9 +182,54 @@ function drawSky() {
     }
     ctx.restore();
   }
+
+  // Lune qui apparaît à la fin
+  if (finishPhase >= 1) {
+    const t = Math.min(finishTimer / 240, 1);
+    ctx.save();
+    ctx.globalAlpha = t * 0.9;
+    ctx.fillStyle = '#fff3e0';
+    ctx.shadowColor = '#fff3e0';
+    ctx.shadowBlur = 30;
+    ctx.beginPath();
+    ctx.arc(width * 0.82, height * 0.18, 55, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+}
+
+function interpolateColor(a, b, t) {
+  const hex = (c) => parseInt(c.slice(1), 16);
+  const ar = (hex(a) >> 16) & 0xff, ag = (hex(a) >> 8) & 0xff, ab = hex(a) & 0xff;
+  const br = (hex(b) >> 16) & 0xff, bg = (hex(b) >> 8) & 0xff, bb = hex(b) & 0xff;
+  const r = Math.round(ar + (br - ar) * t);
+  const g = Math.round(ag + (bg - ag) * t);
+  const bl = Math.round(ab + (bb - ab) * t);
+  return `rgb(${r}, ${g}, ${bl})`;
 }
 
 function drawEvent(e) {
+  if (e.kind === 'superstar') {
+    ctx.save();
+    ctx.translate(e.x, e.y);
+    ctx.rotate(frame * 0.04);
+    const colors = ['#e76f51', '#f4a261', '#e9c46a', '#2a9d8f', '#a8dadc', '#cdb4db'];
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.arc(Math.cos(a) * e.r * 0.7, Math.sin(a) * e.r * 0.7, e.r * 0.25, 0, Math.PI * 2);
+      ctx.fillStyle = colors[i % colors.length];
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(0, 0, e.r * 0.45, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffd166';
+    ctx.fill();
+    ctx.restore();
+    return;
+  }
+
   ctx.save();
   ctx.translate(e.x, e.y);
   const pulse = 1 + Math.sin(frame * 0.08 + e.phase) * 0.12;
@@ -237,6 +293,7 @@ function drawEvent(e) {
 }
 
 function drawEvents() {
+  if (superSurprise) drawEvent(superSurprise);
   for (const e of events) drawEvent(e);
 }
 
@@ -250,6 +307,8 @@ function rocketColors() {
       return { body: '#ffd166', dome: '#e9c46a', wing: '#f4a261', window: '#2a9d8f' };
     case 'sleepy':
       return { body: '#cdb4db', dome: '#9c89b8', wing: '#b5838d', window: '#6d6875' };
+    case 'super':
+      return { body: '#ff9ecd', dome: '#ff7ac2', wing: '#ff5dab', window: '#fff3e0' };
     default:
       return { body: '#f7b267', dome: '#e76f51', wing: '#e76f51', window: '#2a9d8f' };
   }
@@ -373,12 +432,26 @@ function drawRocket() {
     ctx.beginPath();
     ctx.arc(11, 11, 6, 0, Math.PI * 2);
     ctx.stroke();
-  } else if (rocketState.mode === 'star') {
+  } else if (rocketState.mode === 'star' || rocketState.mode === 'super') {
     ctx.fillStyle = '#fff3e0';
     for (let i = -1; i <= 1; i++) {
       ctx.beginPath();
       ctx.arc(i * 20, 26, 3, 0, Math.PI * 2);
       ctx.fill();
+    }
+    if (rocketState.mode === 'super') {
+      // Couronne de petites étoiles qui tournent
+      ctx.save();
+      ctx.translate(0, -20);
+      ctx.rotate(-frame * 0.05);
+      ctx.fillStyle = '#ffd166';
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.arc(Math.cos(a) * 40, Math.sin(a) * 40, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
     }
   }
 
@@ -396,8 +469,12 @@ function spawnParticles() {
       const colors = ['#e76f51', '#f4a261', '#e9c46a', '#2a9d8f', '#a8dadc'];
       color = colors[Math.floor(Math.random() * colors.length)];
     }
-    if (rocketState.mode === 'star') color = '#ffd166';
+    if (rocketState.mode === 'star' || rocketState.mode === 'super') color = '#ffd166';
     if (rocketState.mode === 'sleepy') color = '#cdb4db';
+    if (rocketState.mode === 'super') {
+      const colors = ['#ff9ecd', '#ffd166', '#a8dadc', '#cdb4db'];
+      color = colors[Math.floor(Math.random() * colors.length)];
+    }
     particles.push({
       x: rocket.x - Math.sin(rocket.angle) * 28,
       y: rocket.y + Math.cos(rocket.angle) * 28,
@@ -431,10 +508,42 @@ function drawParticles() {
 }
 
 function updateEvents() {
+  gameTime = frame / 60;
+
+  // Surprise à 1 minute : étoile arc-en-ciel filante
+  if (!superSurprise && gameTime >= 60 && gameTime < 61) {
+    superSurprise = {
+      kind: 'superstar',
+      x: -120,
+      y: height * 0.25,
+      r: 55,
+      vx: 4.5,
+      vy: 1.2,
+      phase: 0,
+    };
+  }
+
   // Spawn un événement toutes les 4–7 secondes
-  if (frame - lastEventTime > 240 + Math.random() * 180) {
+  if (!gameFinished && frame - lastEventTime > 240 + Math.random() * 180) {
     spawnEvent();
     lastEventTime = frame;
+  }
+
+  if (superSurprise) {
+    const s = superSurprise;
+    s.x += s.vx;
+    s.y += s.vy;
+    s.phase += 0.1;
+
+    const dx = rocket.x - s.x;
+    const dy = rocket.y - s.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < s.r + 80) {
+      setRocketMode('super', 'Super fusée !');
+      superSurprise = null;
+    } else if (s.x > width + 120) {
+      superSurprise = null;
+    }
   }
 
   for (let i = events.length - 1; i >= 0; i--) {
@@ -454,6 +563,7 @@ function updateEvents() {
     const hitRadius = 55 + e.r;
     if (dist < hitRadius) {
       // Déclenche un changement d'état
+      if (gameFinished) continue; // plus de transformations après la fin
       if (e.kind === 'comet') setRocketMode('star', 'Fusée étoile !');
       else if (e.kind === 'cloud') setRocketMode('sleepy', 'Fusée tout doux…');
       else if (e.kind === 'bubble') setRocketMode('bubble', 'Fusée bulle !');
@@ -468,7 +578,7 @@ function updateEvents() {
     rocketState.pulse = Math.sin(frame * 0.1) * 0.3 + 0.3;
   } else {
     rocketState.pulse = Math.max(rocketState.pulse - 0.02, 0);
-    if (rocketState.mode !== 'classic' && rocketState.pulse === 0) {
+    if (rocketState.mode !== 'classic' && rocketState.pulse === 0 && !gameFinished) {
       rocketState.mode = 'classic';
       rocketState.colorShift = 0;
     }
@@ -483,6 +593,68 @@ function updateEvents() {
 
 function update() {
   frame++;
+  gameTime = frame / 60;
+
+  // Fin apaisante après 2 minutes
+  if (gameTime >= 120) {
+    if (finishPhase === 0) {
+      finishPhase = 1;
+      finishTimer = 0;
+      showInstruction('Bonne nuit petite fusée 🌙');
+      // Faire descendre la fusée au centre bas
+      mouse.active = true;
+      mouse.x = width / 2;
+      mouse.y = height * 0.85;
+      // Atténuer la musique
+      if (audioCtx && musicGain && !musicMuted) {
+        musicGain.gain.cancelScheduledValues(audioCtx.currentTime);
+        musicGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 8);
+      }
+      musicMuted = true;
+      musicLabel.textContent = 'Silence';
+      musicBtn.classList.add('muted');
+    }
+    gameFinished = true;
+  }
+
+  if (finishPhase === 1) {
+    finishTimer++;
+    // Ralentir tout
+    if (boost > 0) boost = Math.max(boost - 0.02, 0);
+    // Faire descendre la fusée doucement
+    const dx = mouse.x - rocket.x;
+    const dy = mouse.y - rocket.y;
+    const targetAngle = Math.atan2(dy, dx) + Math.PI / 2;
+    rocket.vx += dx * 0.0004;
+    rocket.vy += dy * 0.0004;
+    rocket.vx *= 0.95;
+    rocket.vy *= 0.95;
+    rocket.x += rocket.vx;
+    rocket.y += rocket.vy;
+
+    let angleDiff = targetAngle - rocket.angle;
+    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+    rocket.angle += angleDiff * 0.04;
+
+    // Parallaxe très lente
+    for (const s of stars) {
+      s.y += s.speed * 0.2;
+      if (s.y > height) { s.y = 0; s.x = Math.random() * width; }
+    }
+    for (const c of clouds) {
+      c.y += c.speed * 0.2;
+      if (c.y - c.r > height) { c.y = -c.r; c.x = Math.random() * width; }
+    }
+    for (const p of planets) {
+      p.y += p.speed * 0.2;
+      if (p.y - p.r > height) { p.y = -p.r * 2; p.x = Math.random() * width; }
+    }
+
+    updateEvents();
+    spawnParticles();
+    return;
+  }
 
   if (!mouse.active) {
     mouse.x = width / 2 + Math.sin(frame * 0.008) * width * 0.25;
