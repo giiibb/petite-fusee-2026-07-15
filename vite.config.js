@@ -11,8 +11,7 @@ export default defineConfig({
       input: {
         home: resolve(__dirname, 'index.html'),
         fusee: resolve(__dirname, 'petite-fusee.html'),
-        machines: resolve(__dirname, 'petites-machines.html'),
-        animals: resolve(__dirname, 'petits-animaux.html'),
+        pelleteuse: resolve(__dirname, 'petite-pelleteuse.html'),
       },
     },
   },
